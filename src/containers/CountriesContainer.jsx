@@ -2,16 +2,23 @@ import { useEffect, useState } from "react";
 import CountryDetail from "../components/CountryDetails";
 import CountrySelect from "../components/CountrySelect";
 import "./CountriesContainer.css";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import NewsSection from "../components/News";
 
 const CountriesContainer = () => {
   const [countries, setCountries] = useState([]);
-  const [selectedCountry, setSelectedCountry] = useState(null);
-  const [weather, setWeather] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState();
+  const [weather, setWeather] = useState();
+  const [currency, setCurrency] = useState();
+  const [news, setNews] = useState();
+  const [time, setTime] = useState();
 
   useEffect(() => {
     if (selectedCountry) {
       getWeather();
+      getCurrency();
+      getTime();
+      getNews();
     }
   }, [selectedCountry]);
 
@@ -22,56 +29,107 @@ const CountriesContainer = () => {
   const getCountries = () => {
     fetch("https://restcountries.com/v3.1/all")
       .then((response) => response.json())
-      .then((countries) => setCountries(countries));
-  };
-
-  const getWeather = () => {
-    const capLat = selectedCountry.capitalInfo.latlng[0];
-    const capLong = selectedCountry.capitalInfo.latlng[1];
-    fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${capLat}&longitude=${capLong}&daily=temperature_2m_max,temperature_2m_min&timezone=auto&start_date=2022-12-02&end_date=2022-12-02`
-    )
-      .then((response) => response.json())
-      .then((weatherReq) => setWeather(weatherReq));
+      .then((countries) => setCountries(countries))
+      .catch((error) => console.error(error));
   };
 
   const onCountrySelected = (clickedCountry) => {
     setSelectedCountry(clickedCountry);
   };
 
+  const getWeather = () => {
+    const capLat = selectedCountry.capitalInfo.latlng[0];
+    const capLong = selectedCountry.capitalInfo.latlng[1];
+    try {
+      fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${capLat}&longitude=${capLong}&daily=temperature_2m_max,temperature_2m_min&timezone=auto&start_date=2022-12-02&end_date=2022-12-02`
+      )
+        .then((response) => response.json())
+        .then((weatherReq) => setWeather(weatherReq));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getCurrency = () => {
+    const countryCurrency = Object.keys(
+      selectedCountry.currencies
+    )[0].toLowerCase();
+    fetch(
+      `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd/${countryCurrency}.json`
+    )
+      .then((response) => response.json())
+      .then((currencyReq) => setCurrency(currencyReq));
+  };
+
+  const getNews = () => {
+    const countryName = selectedCountry.name.common.toLowerCase();
+    try {
+      fetch(
+        `https://content.guardianapis.com/search?q=${countryName}&format=json&api-key=test`
+      )
+        .then((response) => response.json())
+        .then((newsReq) => setNews(newsReq));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getTime = () => {
+    const capLat = selectedCountry.capitalInfo.latlng[0];
+    const capLong = selectedCountry.capitalInfo.latlng[1];
+    try {
+      fetch(
+        `http://api.timezonedb.com/v2.1/get-time-zone?key=M7DGBDEQA3SP&format=json&by=position&lat=${capLat}&lng=${capLong}
+        `
+      )
+        .then((response) => response.json())
+        .then((timeReq) => setTime(timeReq));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
-    <>
+    <div id="c-c">
+      <h2>Country Crammer</h2>
       <CountrySelect
         countries={countries}
         onCountrySelected={onCountrySelected}
       />
 
-      {selectedCountry ? (
-        <MapContainer
-          style={{ height: "400px", width: "500px" }}
-          center={[
-            selectedCountry.capitalInfo.latlng[0],
-            selectedCountry.capitalInfo.latlng[1],
-          ]}
-          zoom={1}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <Marker
-            position={[
-              selectedCountry.capitalInfo.latlng[0],
-              selectedCountry.capitalInfo.latlng[1],
-            ]}
-          />
-        </MapContainer>
-      ) : null}
-
-      {selectedCountry ? (
-        <CountryDetail country={selectedCountry} weather={weather} />
-      ) : null}
-    </>
+      <div id="country-info">
+        {selectedCountry ? (
+          <MapContainer
+            style={{ height: "500px", width: "525px" }}
+            center={[0, 0]}
+            zoom={1}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <Marker
+              position={[
+                selectedCountry.capitalInfo.latlng[0],
+                selectedCountry.capitalInfo.latlng[1],
+              ]}
+            />
+          </MapContainer>
+        ) : null}
+        <div id="cd">
+          {selectedCountry ? (
+            <CountryDetail
+              country={selectedCountry}
+              weather={weather}
+              currency={currency}
+              time={time}
+            />
+          ) : null}
+          {news ? <NewsSection news={news} /> : null}
+        </div>
+      </div>
+    </div>
   );
 };
 

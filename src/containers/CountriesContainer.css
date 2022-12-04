@@ -1,3 +1,30 @@
-#map {
-  height: 180px;
+#c-c {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#select-comp {
+  margin: 30px;
+}
+
+MapContainer {
+  margin: 30px;
+}
+
+#flag-img {
+  height: 200px;
+  width: 300px;
+}
+
+#country-info{
+  display: flex;
+  
+}
+
+#cd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: 30px;
 }
