@@ -15,10 +15,19 @@ const CountriesContainer = () => {
 
   useEffect(() => {
     if (selectedCountry) {
-      getWeather();
-      getCurrency();
-      getTime();
-      getNews();
+      const a = getWeather();
+      const b = getCurrency();
+      const c = getTime();
+      const d = getNews();
+      console.log(a);
+      Promise.all([a, b, c, d]).then(
+        ([weatherObj, currencyObj, timeObj, newsObj]) => {
+          setWeather(weatherObj);
+          setCurrency(currencyObj);
+          setTime(timeObj);
+          setNews(newsObj);
+        }
+      );
     }
   }, [selectedCountry]);
 
@@ -41,11 +50,9 @@ const CountriesContainer = () => {
     const capLat = selectedCountry.capitalInfo.latlng[0];
     const capLong = selectedCountry.capitalInfo.latlng[1];
     try {
-      fetch(
+      return fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${capLat}&longitude=${capLong}&daily=temperature_2m_max,temperature_2m_min&timezone=auto&start_date=2022-12-02&end_date=2022-12-02`
-      )
-        .then((response) => response.json())
-        .then((weatherReq) => setWeather(weatherReq));
+      ).then((response) => response.json());
     } catch (error) {
       console.log(error);
     }
@@ -55,21 +62,19 @@ const CountriesContainer = () => {
     const countryCurrency = Object.keys(
       selectedCountry.currencies
     )[0].toLowerCase();
-    fetch(
+    return fetch(
       `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd/${countryCurrency}.json`
-    )
-      .then((response) => response.json())
-      .then((currencyReq) => setCurrency(currencyReq));
+    ).then((response) => response.json());
+    // .then((currencyReq) => setCurrency(currencyReq));
   };
 
   const getNews = () => {
     const countryName = selectedCountry.name.common.toLowerCase();
     try {
-      fetch(
+      return fetch(
         `https://content.guardianapis.com/search?q=${countryName}&format=json&api-key=test`
-      )
-        .then((response) => response.json())
-        .then((newsReq) => setNews(newsReq));
+      ).then((response) => response.json());
+      // .then((newsReq) => setNews(newsReq));
     } catch (error) {
       console.log(error);
     }
